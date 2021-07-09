@@ -1,0 +1,17 @@
+services:
+  sense-collector:
+    container_name: sense-collector
+    environment:
+      SENSE_COLLECTOR_DEBUG: "false"
+      SENSE_COLLECTOR_DEBUG_CURL: "false"
+      SENSE_COLLECTOR_HEALTHCHECK: "true"
+      SENSE_COLLECTOR_HOST_HOSTNAME: app02.tylephony.com
+      SENSE_COLLECTOR_INFLUXDB_PASSWORD: none
+      SENSE_COLLECTOR_INFLUXDB_URL: http://influxdb01.tylephony.com:8086/write?db=sense
+      SENSE_COLLECTOR_INFLUXDB_USERNAME: none
+      SENSE_COLLECTOR_MONITOR_ID: <<monitor_id>>
+      SENSE_COLLECTOR_TOKEN: <<token>>
+      TZ: America/Chicago
+    image: lux4rd0/sense-collector:latest
+    restart: always
+version: '3.3'
