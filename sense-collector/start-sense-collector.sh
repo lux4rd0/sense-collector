@@ -1,0 +1,81 @@
+#!/bin/bash
+
+##
+## Sense Collector - start-sense-collector.sh
+##
+
+##
+## Set Specific Variables
+##
+
+collector_type="sense-collector"
+
+##
+## Sense-Collector Details
+##
+
+source sense-collector-details.sh
+
+##
+## Set Variables from Environmental Variables
+##
+
+debug=$SENSE_COLLECTOR_DEBUG
+debug_curl=$SENSE_COLLECTOR_DEBUG_CURL
+debug_sleeping=$SENSE_COLLECTOR_DEBUG_SLEEPING
+host_hostname=$SENSE_COLLECTOR_HOST_HOSTNAME
+influxdb_password=$SENSE_COLLECTOR_INFLUXDB_PASSWORD
+influxdb_url=$SENSE_COLLECTOR_INFLUXDB_URL
+influxdb_username=$SENSE_COLLECTOR_INFLUXDB_USERNAME
+poll_interval=$SENSE_COLLECTOR_SENSE_COLLECTOR_POLL_INTERVAL
+sense_monitor_id=$SENSE_COLLECTOR_MONITOR_ID
+sense_token=$SENSE_COLLECTOR_TOKEN
+threads=$SENSE_COLLECTOR_THREADS
+
+##
+## Check for required intervals
+##
+
+if [ -z "${poll_interval}" ]; then echo "${echo_bold}${echo_color_random}${collector_type}:${echo_normal} ${echo_bold}SENSE_COLLECTOR_SENSE_COLLECTOR_POLL_INTERVAL${echo_normal} environmental variable not set. Defaulting to ${echo_bold}60${echo_normal} seconds."; poll_interval="60"; export SENSE_COLLECTOR_SENSE_COLLECTOR_POLL_INTERVAL="60"; fi
+
+if [ -z "${host_hostname}" ]; then echo "${echo_bold}${echo_color_random}${collector_type}:${echo_normal} ${echo_bold}SENSE_COLLECTOR_HOST_HOSTNAME${echo_normal} environmental variable not set. Defaulting to ${echo_bold}sense-collector${echo_normal}."; host_hostname="sense-collector"; export SENSE_COLLECTOR_HOST_HOSTNAME="sense-collector"; fi
+
+if [ "$debug" == "true" ]
+
+then
+
+echo "$(date) - Starting Sense Collector (start-sense-collector.sh) - https://github.com/lux4rd0/sense-collector
+
+Debug Environmental Variables
+
+collector_type=${collector_type}
+debug=${debug}
+debug_curl=${debug_curl}
+host_hostname=${host_hostname}
+influxdb_password=${influxdb_password}
+influxdb_url=${influxdb_url}
+influxdb_username=${influxdb_username}
+poll_interval=${poll_interval}
+sense_monitor_id=${sense_monitor_id}
+sense_token=${sense_token}
+threads=${threads}"
+fi
+
+##
+## Send Startup Event Timestamp to InfluxDB
+##
+
+process_start
+
+##
+## Curl Command
+##
+
+if [ "$debug_curl" == "true" ]; then curl=(  ); else curl=( --silent --show-error --fail ); fi
+
+##
+## Start Sensor Collector Socket Connection
+##
+
+echo "${echo_bold}${echo_color_random}${collector_type}:${echo_normal} Starting up ${echo_bold}${echo_color_start}sense_collector${echo_normal} - Stream Type: ${echo_bold}${poll_interval}${echo_normal}."
+timeout 10m ./websocat_amd64-linux-static -n -t - autoreconnect:wss://clientrt.sense.com/monitors/"${sense_monitor_id}"/realtimefeed -H "Authorization: bearer ${sense_token}" -H "Sense-Collector-Client-Version: 1.0.0" -H "X-Sense-Protocol: 3" -H "User-Agent: okhttp/3.8.0" | ./exec-sense-collector.sh
