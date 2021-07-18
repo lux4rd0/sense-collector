@@ -2,7 +2,7 @@ services:
   sense-collector:
     container_name: sense-collector
     environment:
-      SENSE_COLLECTOR_HOST_HOSTNAME: sense-collector.tylephony.com
+      SENSE_COLLECTOR_HOST_HOSTNAME: sense-collector.lux4rd0.com
       SENSE_COLLECTOR_INFLUXDB_PASSWORD: none
       SENSE_COLLECTOR_INFLUXDB_URL: http://influxdb01.tylephony.com:8086/write?db=sense
       SENSE_COLLECTOR_INFLUXDB_USERNAME: none
