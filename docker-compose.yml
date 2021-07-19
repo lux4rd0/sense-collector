@@ -1,13 +1,13 @@
 services:
   sense-collector:
-    container_name: sense-collector
+    container_name: sense-collector-72535
     environment:
       SENSE_COLLECTOR_HOST_HOSTNAME: sense-collector.lux4rd0.com
       SENSE_COLLECTOR_INFLUXDB_PASSWORD: none
       SENSE_COLLECTOR_INFLUXDB_URL: http://influxdb01.lux4rd0.com:8086/write?db=sense
       SENSE_COLLECTOR_INFLUXDB_USERNAME: none
-      SENSE_COLLECTOR_MONITOR_ID: <<monitor_id>>
-      SENSE_COLLECTOR_TOKEN: <<token>>
+      SENSE_COLLECTOR_MONITOR_ID: 72535
+      SENSE_COLLECTOR_TOKEN: t1.1476.1474.8e6dc77daf22e1fb471d7b942w97e477d1es53bcf2d72
       TZ: America/Chicago
     image: lux4rd0/sense-collector:latest
     restart: always
