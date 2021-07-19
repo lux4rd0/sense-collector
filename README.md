@@ -51,13 +51,30 @@ The following file will be generated for you:
 
 #### `docker-compose.yml`
 
+An example of this docker-compose.yml file is included in this repository.
+
+    services:
+      sense-collector:
+        container_name: sense-collector-72535
+        environment:
+          SENSE_COLLECTOR_HOST_HOSTNAME: sense-collector.lux4rd0.com
+          SENSE_COLLECTOR_INFLUXDB_PASSWORD: none
+          SENSE_COLLECTOR_INFLUXDB_URL: http://influxdb01.lux4rd0.com:8086/write?db=sense
+          SENSE_COLLECTOR_INFLUXDB_USERNAME: none
+          SENSE_COLLECTOR_MONITOR_ID: 72535
+          SENSE_COLLECTOR_TOKEN: t1.1476.1474.8e6dc77daf22e1fb471d7b942w97e477d1es53bcf2d72
+          TZ: America/Chicago
+        image: lux4rd0/sense-collector:latest
+        restart: always
+    version: '3.3'
+
 If you don't want to use docker-compose, an example docker run command will be displayed on the screen.
 
     docker run --rm \
       --name=sense-collector-72535 \
       -e SENSE_COLLECTOR_HOST_HOSTNAME=app02.tylephony.com \
       -e SENSE_COLLECTOR_INFLUXDB_PASSWORD=5Q7c7hwQtsZtCrXW \
-      -e SENSE_COLLECTOR_INFLUXDB_URL=http://influxdb01.tylephony.com:8086/write?db=sense \
+      -e SENSE_COLLECTOR_INFLUXDB_URL=http://influxdb01.lux4rd0.com:8086/write?db=sense \
       -e SENSE_COLLECTOR_INFLUXDB_USERNAME=senseuser \
       -e SENSE_COLLECTOR_MONITOR_ID=72535 \
       -e SENSE_COLLECTOR_TOKEN=t1.1476.1474.8e6dc77daf22e1fb471d7b942w97e477d1es53bcf2d72 \
