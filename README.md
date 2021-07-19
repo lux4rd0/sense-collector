@@ -1,15 +1,11 @@
 
-
-
-
 ## About The Project
 
 <center><img src="https://labs.lux4rd0.com/wp-content/uploads/2021/07/sense_collector_header.png"></center>
 
-
 **Sense Collector** is a set of scripts deployed with Docker that provide a way of collecting data from the [Sense](https://sense.com/) energy monitoring system. Once deployed, this collection of Grafana dashboards will help you start visualizing that data. If you're just getting started with Grafana, InfluxDB, and Sense - you may want to check out my [Sense Dashboards AIO](https://github.com/lux4rd0/sense-dashboards-aio) (All In One) project.
 
-A live set of dashboards using this collector [are available](https://labs.lux4rd0.com/sense-collector/) for you to try out.
+A live set of dashboards using this Collector [are available](https://labs.lux4rd0.com/sense-collector/) for you to try out.
 
 ## Getting Started
 
@@ -72,10 +68,9 @@ If you don't want to use docker-compose, an example docker run command will be d
 
 Running `docker-compose up -d' or the `docker-run` command will download and start up the sense-collector container. 
 
-## Environmental flags:
+## Environmental Flags:
 
 The Docker contain can be configured with additional environment flags to control collector behaviors. They are descript below:
-
 
 `SENSE_COLLECTOR_DEBUG` - OPTIONAL
 
@@ -83,7 +78,6 @@ Outputs additional logging. Defaults to false.
 
 - false
 - true
-
 
 `SENSE_COLLECTOR_DEBUG_CURL` - OPTIONAL
 
@@ -99,10 +93,9 @@ Outputs additional logging specific to script validation. Defaults to false.
 - true
 - false
 
-
 `SENSE_COLLECTOR_DEBUG_SLEEPING` - OPTIONAL
 
-Outputs additional logging specific to when the collector is sleeping between polling. Sometimes you want to see if it's doing anything. Defaults to false.
+Outputs additional logging specific to when the Collector is sleeping between polling. Sometimes you want to see if it's doing anything. Defaults to false.
 
 - true
 - false
@@ -114,7 +107,6 @@ Disables or enables the Device Details process. Defaults to false if not set.
 - true
 - false
 
-
 `SENSE_COLLECTOR_DISABLE_HEALTH_CHECK` - OPTIONAL
 
 Disables or enables the Health Check process. Defaults to false if not set.
@@ -122,15 +114,12 @@ Disables or enables the Health Check process. Defaults to false if not set.
 - true
 - false
 
-
 `SENSE_COLLECTOR_DISABLE_HOST_PERFORMANCE` - OPTIONAL
 
 Disables or enables the Host Performance process. Defaults to false if not set.
 
 - true
 - false
-
-
 
 `SENSE_COLLECTOR_DISABLE_MONITOR_STATUS` - OPTIONAL
 
@@ -148,14 +137,11 @@ Disables or enables the Sense Collector process. Defaults to false if not set.
 
 `SENSE_COLLECTOR_HOST_HOSTNAME` - OPTIONAL
 
-This value represents the hostname that is running the Docker container. Docker creates a unique hostname each time a docker container is recycled. This entry is used in the Collector Info dashboard to know where the collector is running. This value is populated when the `generate_docker-compose.sh` script generates the `docker-compose.yml` file.
-
+This value represents the hostname that is running the Docker container. Docker creates a unique hostname each time a docker container is recycled. This entry is used in the Collector Info dashboard to know where the Collector is running. This value is populated when the `generate_docker-compose.sh` script generates the `docker-compose.yml` file.
 
 `SENSE_COLLECTOR_HOST_PERFORMANCE_POLL_INTERVAL` - OPTIONAL
 
 Time in seconds that the Host Performance process polls the host for performance details. Defaults to 60 (seconds).
-
-
 
 `SENSE_COLLECTOR_INFLUXDB_PASSWORD` - REQUIRED
 
@@ -165,7 +151,6 @@ The password to your InfluxDB database instance. If you use the `generate_docker
 
 The URL required to persist data to InfluxDB. If you use the `generate_docker-compose.sh` script, it defaults to "http://influxdb:8086/write?db=sense". It is a **required** environment variable.
 
-
 `SENSE_COLLECTOR_INFLUXDB_USERNAME` - REQUIRED
 
 The username to your InfluxDB database instance. If you use the `generate_docker-compose.sh` script, it defaults to "influxdb". It is a **required** environment variable.
@@ -173,7 +158,6 @@ The username to your InfluxDB database instance. If you use the `generate_docker
 `SENSE_COLLECTOR_MONITOR_ID` - REQUIRED
 
 The ID of your Sense monitor. If you use the generate_docker-compose.sh script, it will be automatically added to your docker-compose.yml or docker-compose run command for you based on your Sense username and password. There's no way to know this ID from the Sense mobile or Web app. It is a **required** environment variable.
-
 
 `SENSE_COLLECTOR_MONITOR_STATUS_POLL_INTERVAL` - OPTIONAL
 
@@ -193,12 +177,9 @@ or
 
 If streaming data is not an option or a desire to reduce the amount of CPU being consumed, use one of these settings (measured in seconds). When these settings are provided, the data stream is still passed through the Sense Collector to listen for timeline events but will only process mains and device details on the polling interval provided.
 
-
-
-
 `SENSE_COLLECTOR_THREADS` - OPTIONAL
 
-The number of threads used for processing device details. Defaults to 4. It should be set to something close to the number of CPUs on your host. For slower processing hosts, lowering this and using a polling interval may be helpful.
+The number of threads used for processing device details. Defaults to 4. Threads should be set to something close to the number of CPUs on your host. For slower processing hosts, lowering this and using a polling interval may be helpful.
 
 `SENSE_COLLECTOR_TOKEN` - REQUIRED
 
@@ -210,7 +191,7 @@ The authentication token for your Sense monitor. If you use the generate_docker-
 
 Sense Collector is the primary data collector and is responsible for gathering details on the following:
 
-voltage, watts, hz on the mains, as well as device-specific wattage details. If you happen to have any [Sense compatible](https://help.sense.com/hc/en-us/articles/360012089393-What-smart-plugs-are-compatible-with-Sense-) smart plugs, their additional metric details of voltage and amps are collected.
+Voltage, Watts, Hz on the mains, and device-specific wattage details. If you happen to have any [Sense compatible](https://help.sense.com/hc/en-us/articles/360012089393-What-smart-plugs-are-compatible-with-Sense-) smart plugs, their additional metric details of voltage and amps are collected.
 
 Timeline events for devices change of states (on, off, idle)
 
@@ -234,38 +215,71 @@ Health Check is a function that runs every 60 seconds to validate the health of 
 
 ## Grafana Dashboards
 
-Collecting data is only half the fun. Now it's time to provision some Grafana Dashboards to visualize all of your significant Sense data. You'll find a [folder of dashboards](https://github.com/lux4rd0/sense-collector/tree/main/dashboards) with collectors and backends split out. You can also use the links/numbers next to each dashboard title to load the dashboards in [directly from Grafana](https://grafana.com/grafana/dashboards?search=sense%20collector).
+Collecting data is only half the fun. Now it's time to provision some Grafana Dashboards to visualize all of your essential Sense data. You'll find a [folder of dashboards](https://github.com/lux4rd0/sense-collector/dashboards) with collectors and backends split out. You can also use the links/numbers next to each dashboard title to load the dashboards in [directly from Grafana](https://grafana.com/grafana/dashboards?search=sense%20collector).
+
+### In General:
+
+Each dashboard has dropdowns at the top that provide for filtering of measurements based on devices and plugs. They default to "All," but you can certainly select and save preferences.
+
+**Interval**:  A dropdown that provides some different levels of smoothing helps manage how the graphs look based on the interval of data being collected by the Sense Collector. Think of this as a level of "smoothing" based on the time frame you've chosen and the quantity of data collected (streaming versus polled data.)
+
+**Device Status On/Off/Idle**: These three toggles provide for the overlay of event annotations in the Wattage By Devices panels as well as the Wattage, Volts, and Hz panels in the Mains Overview dashboard.
+
+**Sense Collector Dashboard Links**: This dropdown in the top right-hand corner provides easy access to the other dashboards in this collection. The links maintain the current time range and any variables that have been changed between dashboards. Meaning - if you change the time range from "Today so far" to "Last 7 days" it'll stay the same between dashboards. Same for any selected devices and Interval smoothing.
+
+**Time Range**: This defaults to "Today so far" but can be updated to any other Relative or Absolute time range. For longer time ranges, be sure to make changes to the "Interval" dropdown if you want to smooth out any of the data.
+
+**Dashboard Refresh**: Each of the dashboards are set to refresh every sixty seconds. The refresh can be changed or disabled altogether.
 
 ### Collector Info - [11111](https://grafana.com/grafana/dashboards/14376)
 
-<center><img src="./images/weatherflow_collector-alerts.jpg"></center>
+<center><img src="./images/sense_collector-screen_shot-collector_info.jpg"></center>
 
-Coming soon - a set of Grafana alerts to let you know of deviations in expected collector performance or weather metrics change.
+**Collector Info** provides observability into how the Sense Collector is functioning alongside some metrics related to the host's performance that the Collector is running on. It helps determine the performance of the main collector functions to assist with troubleshooting. Epoch Time Difference helps determine if your hosts can keep up with the number of messages being processed from the Sense monitor. It provides the difference between the host time and the epoch time received in the Sense monitor data. Negative numbers mean the Sense monitor is ahead of the hosts. Positive numbers mean the host is behind the Sense monitor. If the drift trends to the positive, it may also mean that there's just time clock drift. Ensure you keep an eye on the NTP time sync on both your host and Sense if there's a large discrepancy being shown here.
+
+The CPU, load average, and memory utilization panels show host-level details and are not specific to the performance of the docker container. Per Process CPU Usage, Netstat, and Processes are particular to the container.
+
+The Collector Starts provide the last time the container and process were started. Due to the way Sense handles the API, the connection is reset every ten minutes.
 
 ### Device Overview - [11111](https://grafana.com/grafana/dashboards/14376)
 
-<center><img src="./images/weatherflow_collector-current_conditions.jpg"></center>
+<center><img src="./images/sense_collector-screen_shot-device_overview.jpg"></center>
 
-This dashboard provides a comprehensive overview of your station location, combining all "at-a-glance" metrics from your WeatherFlow device. The current conditions dashboard is divided up into:
+**Device Overview** is the main dashboard for Sense Collector. Here you'll see several different sections about both overall and detailed device details.
 
+**Current Wattage**: A Bubble Chart showing current wattage usage by device. Larger circles represent higher wattage consumption.
+
+**Wattage By Device (Stacked)**: Wattage overtime per device. The graph is stacked to represent total household wattage.
+
+**Device Status**: This is a State Timeline representing event data from the Sensor Monitor over time. It currently represents three states, On, Off, and Idle.
+
+**Device Details - Average**: A table view of current data representing the current state, state time, watts in use, average, and always on makeup. Average duration, monthly kWh, percent, and the number of runs are also listed. This table defaults to be sorted by "Watts (In Use)."
+
+**Device Details - Current Month**: Shows the number of runs per device since the start of the current month.
+
+**Device Details - Yearly**: Shows calculated kWh and costs for each device. The text next to each device provides details on how the costs are calculated. For example, "Based on the last 30 days," "Based on the last 7 days," or "Based on last season."
+
+**Plug Details**: If you have any of the [Sense compatible](https://help.sense.com/hc/en-us/articles/360012089393-What-smart-plugs-are-compatible-with-Sense-) smart plugs, they will be listed here as well. Open up this row to display Volts and Amps measured by each plug. There's another measurement (Who Knows By Plugs), but I don't know what it does yet.
+
+**Always On Devices**: Shows which devices that the Sense monitor has detected to have an Always On wattage component. This may be different than actual wattage and tends to update less frequently.
 
 ### Mains Overview - [14378](https://grafana.com/grafana/dashboards/14378)
 
-<center><img src="./images/weatherflow_collector-device_details.jpg"></center>
+<center><img src="./images/sense_collector-screen_shot-mains_overview.jpg"></center>
 
-This dashboard provides the current status for both the Tempest and your WeatherFlow hub, such as Uptime, Radio Status, RSSI, Reboot Count, I2C Bus Count Error, Radio Version, Network ID, Firmware Version, and Voltage.
-
-RSSI and Battery Voltage over time defaulted to the last seven days are shown at the top of the dashboard, while current device details are shown below.
-
-Sensor Status measurements are shown with a number related to each per minute collection from the device. Either "Sensors OK" is down or any failures, which sensor had the error. Note that if you have the Lightning Disturber enabled, you may see a high number of failures as electromagnetic interference is being suppressed.
+**Mains Overview** provides three panels showing Wattage (Stacked), Voltages, and Frequency. There are dropdowns at the top of the dashboard to show Leg 1, Leg 2, or both together. Device Status On, Off, and Idle event annotations may be toggled on or off.
 
 ### Monitor & Detection - [14380](https://grafana.com/grafana/dashboards/14380)
 
-<center><img src="./images/weatherflow_collector-forecast.jpg"></center>
+<center><img src="./images/sense_collector-screen_shot-monitor_and_detection.jpg"></center>
 
-Provides both a daily and hourly forecast in table format with charts below them. The default time range includes the current day plus the next nine upcoming days. The interval drop-down at the top defaults to 12 hours to provide for highs and lows forecasts. Clicking on any of the dates in the "Forecast - Daily" table will refresh the Forecast hourly table to that day's hourly forecasts. This can also be done from the top "Forecast Day" drop-down menu.
+The **Monitor & Detection** dashboard provides observability of the monitor itself.
 
+**Device Detection Status**:  Represents Device Detection Status for both "Found" and "In Progress" devices.
 
+**Wifi Signal Strength - RSSI**: Represents the Wifi signal strength of your Sense monitor.
+
+**Monitor Details**: This panel shows current information about Online status, General Status, Learning Progress, IP Address, MAC Address, Wifi SSID, Wifi Strength, Ethernet, NDT Enabled, and software version. 
 
 ## Multiple Devices
 
