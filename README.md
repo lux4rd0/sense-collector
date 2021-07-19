@@ -234,11 +234,13 @@ Each dashboard has dropdowns at the top that provide for filtering of measuremen
 
 <center><img src="./images/sense_collector-screen_shot-collector_info.jpg"></center>
 
-**Collector Info** provides observability into how the Sense Collector is functioning alongside some metrics related to the host's performance that the Collector is running on. It helps determine the performance of the main collector functions to assist with troubleshooting. Epoch Time Difference helps determine if your hosts can keep up with the number of messages being processed from the Sense monitor. It provides the difference between the host time and the epoch time received in the Sense monitor data. Negative numbers mean the Sense monitor is ahead of the hosts. Positive numbers mean the host is behind the Sense monitor. If the drift trends to the positive, it may also mean that there's just time clock drift. Ensure you keep an eye on the NTP time sync on both your host and Sense if there's a large discrepancy being shown here.
+**Collector Info**:  Provides observability into how the Sense Collector functions alongside metrics related to the host's performance. This dashboard helps understand the performance of the main collector functions to assist with troubleshooting.
 
-The CPU, load average, and memory utilization panels show host-level details and are not specific to the performance of the docker container. Per Process CPU Usage, Netstat, and Processes are particular to the container.
+**Epoch Time Difference**: Helps determine if your hosts can keep up with processing messages from the Sense monitor. It provides the difference between the host time and the epoch time received in the Sense monitor data. Negative numbers mean the Sense monitor is ahead of the hosts. Positive numbers mean the host is behind the Sense monitor. If the drift trends to the positive, it may also mean that there's just time clock drift. Ensure you keep an eye on the NTP time sync on both your host and Sense if there's a large discrepancy.
 
-The Collector Starts provide the last time the container and process were started. Due to the way Sense handles the API, the connection is reset every ten minutes.
+**CPU, Load Average, Memory Utilization**:  These panels show host-level details and are not specific to the performance of the docker container. Per Process CPU Usage, Netstat, and Processes are particular to the container.
+
+**Collector Starts**: Provide the last time the container and process were started.  The connection is reset every ten minutes due to the way Sense times out the connection.
 
 ### Device Overview - [11111](https://grafana.com/grafana/dashboards/14376)
 
