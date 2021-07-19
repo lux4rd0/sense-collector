@@ -1,4 +1,3 @@
-
 ## About The Project
 
 <center><img src="https://labs.lux4rd0.com/wp-content/uploads/2021/07/sense_collector_header.png"></center>
@@ -297,7 +296,7 @@ See the open issues for a list of proposed features (and known issues).
 
 Dave Schmid: [@lux4rd0](https://twitter.com/lux4rd0) - dave@pulpfree.org
 
-Project Link: https://github.com/lux4rd0/weatherflow-collector
+Project Link: https://github.com/lux4rd0/sense-collector
 
 ## Acknowledgements
 
