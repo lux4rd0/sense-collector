@@ -4,7 +4,7 @@
 
 ## About The Project
 
-<center><img src="https://labs.lux4rd0.com/wp-content/uploads/2021/05/weatherflow_collector_header.png"></center>
+<center><img src="https://labs.lux4rd0.com/wp-content/uploads/2021/07/sense_collector_header.png"></center>
 
 
 **Sense Collector** is a set of scripts deployed with Docker that provide a way of collecting data from the [Sense](https://sense.com/) energy monitoring system. Once deployed, this collection of Grafana dashboards will help you start visualizing that data. If you're just getting started with Grafana, InfluxDB, and Sense - you may want to check out my [Sense Dashboards AIO](https://github.com/lux4rd0/sense-dashboards-aio) (All In One) project.
