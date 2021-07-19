@@ -264,6 +264,8 @@ Each dashboard has dropdowns at the top that provide for filtering of measuremen
 
 **Always On Devices**: Shows which devices that the Sense monitor has detected to have an Always On wattage component. This may be different than actual wattage and tends to update less frequently.
 
+> **Notice**: This Grafana dashboard uses the community visualization [Bubble Chart](https://grafana.com/grafana/plugins/digrich-bubblechart-panel/) panel plugin. It hasn't been updated for quite some time and won't work out of the box with current versions of Grafana due to plugin signing requirements. [Configuration changes](https://grafana.com/docs/grafana/latest/administration/configuration/#allow_loading_unsigned_plugins) on your Grafana instance will be needed to load this plugin.
+
 ### Mains Overview - [14736](https://grafana.com/grafana/dashboards/14736)
 
 <center><img src="./images/sense_collector-screen_shot-mains_overview.jpg"></center>
