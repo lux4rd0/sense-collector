@@ -230,7 +230,7 @@ Each dashboard has dropdowns at the top that provide for filtering of measuremen
 
 **Dashboard Refresh**: Each of the dashboards are set to refresh every sixty seconds. The refresh can be changed or disabled altogether.
 
-### Collector Info - [11111](https://grafana.com/grafana/dashboards/14376)
+### Collector Info - [14734](https://grafana.com/grafana/dashboards/14734)
 
 <center><img src="./images/sense_collector-screen_shot-collector_info.jpg"></center>
 
@@ -242,7 +242,7 @@ Each dashboard has dropdowns at the top that provide for filtering of measuremen
 
 **Collector Starts**: Provide the last time the container and process were started.  The connection is reset every ten minutes due to the way Sense times out the connection.
 
-### Device Overview - [11111](https://grafana.com/grafana/dashboards/14376)
+### Device Overview - [14735](https://grafana.com/grafana/dashboards/14735)
 
 <center><img src="./images/sense_collector-screen_shot-device_overview.jpg"></center>
 
@@ -264,13 +264,13 @@ Each dashboard has dropdowns at the top that provide for filtering of measuremen
 
 **Always On Devices**: Shows which devices that the Sense monitor has detected to have an Always On wattage component. This may be different than actual wattage and tends to update less frequently.
 
-### Mains Overview - [14378](https://grafana.com/grafana/dashboards/14378)
+### Mains Overview - [14736](https://grafana.com/grafana/dashboards/14736)
 
 <center><img src="./images/sense_collector-screen_shot-mains_overview.jpg"></center>
 
 **Mains Overview** provides three panels showing Wattage (Stacked), Voltages, and Frequency. There are dropdowns at the top of the dashboard to show Leg 1, Leg 2, or both together. Device Status On, Off, and Idle event annotations may be toggled on or off.
 
-### Monitor & Detection - [14380](https://grafana.com/grafana/dashboards/14380)
+### Monitor & Detection - [14737](https://grafana.com/grafana/dashboards/14737)
 
 <center><img src="./images/sense_collector-screen_shot-monitor_and_detection.jpg"></center>
 
