@@ -1,0 +1,25 @@
+name: sense-collector
+services:
+  sense-collector:
+    container_name: sense-collector
+    environment:
+      SENSE_COLLECTOR_API_PASSWORD: adkajsdlnaisdjasidamlisdmald
+      SENSE_COLLECTOR_API_USERNAME: dave@lux4rd0.com
+      SENSE_COLLECTOR_HOST_HOSTNAME: app20.tylephony.com
+      SENSE_COLLECTOR_INFLUXDB_BUCKET: sense
+      SENSE_COLLECTOR_INFLUXDB_ORG: Tylephony
+      SENSE_COLLECTOR_INFLUXDB_TOKEN: lkjijdalisdjoanisdnalisdjlamisdjm==
+      SENSE_COLLECTOR_INFLUXDB_URL: http://influxdb.lux4rd0.com:8086
+      SENSE_COLLECTOR_LOG_LEVEL_API: CRITICAL
+      SENSE_COLLECTOR_LOG_LEVEL_GENERAL: INFO
+      SENSE_COLLECTOR_LOG_LEVEL_STORAGE: CRITICAL
+      SENSE_COLLECTOR_SENSE_API_RECEIVE_DATA_OUTPUT: "False"
+      TZ: America/Chicago
+    image: lux4rd0/sense-collector:latest
+    restart: always
+    volumes:
+      - type: bind
+        source: /mnt/docker/sense-collector/export
+        target: /app/export
+        bind:
+          create_host_path: true

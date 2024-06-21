@@ -1,9 +1,10 @@
 
+
 ## About The Project
 
 <center><img src="https://labs.lux4rd0.com/wp-content/uploads/2021/07/sense_collector_header.png"></center>
 
-**Sense Collector** is a set of scripts deployed with Docker that provide a way of collecting data from the [Sense](https://sense.com/) energy monitoring system. Once deployed, this collection of Grafana dashboards will help you start visualizing that data. If you're just getting started with Grafana, InfluxDB, and Sense - you may want to check out my [Sense Dashboards AIO](https://github.com/lux4rd0/sense-dashboards-aio) (All In One) project.
+**Sense Collector** is a set of scripts deployed with Docker that provide a way of collecting data from the [Sense](https://sense.com/) energy monitoring system. Once deployed, this collection of Grafana dashboards will help you start visualizing that data. If you're just getting started with Grafana, InfluxDB, and Sense - you may want to check out my [Sense Dashboards AIO](https://github.com/lux4rd0/sense-dashboards-aio) (All In One) project. (Still being updated... It currently uses the older V1 of my collector...)
 
 A live set of dashboards using this Collector [are available](https://labs.lux4rd0.com/sense-collector/) for you to try out.
 
@@ -15,71 +16,74 @@ The project builds a pre-configured Docker container that takes different config
 
 - [Docker](https://docs.docker.com/install)
 - [Docker Compose](https://docs.docker.com/compose/install)
-- [InfluxDB 1.8](https://docs.influxdata.com/influxdb/v1.8/) or [Grafana Loki 2.2](https://grafana.com/oss/loki/)
-- [Grafana 8.0.6](https://grafana.com/oss/grafana/)
+- [InfluxDB 2.x](https://docs.influxdata.com/influxdb/v2/) 
+- [Grafana 11.0.0](https://grafana.com/oss/grafana/)
 
 ## Deploying the Sense Collector
 
 Use the following [Docker container](https://hub.docker.com/r/lux4rd0/sense-collector):
 
-    lux4rd0/sense-collector:1.0.1
+    lux4rd0/sense-collector:2.0.03
     lux4rd0/sense-collector:latest
     
-Correct environmental variables are required for the container to function. It mainly includes a **Monitor ID** and a corresponding **authentication token**. If you don't have those, the following script may be used:
+Correct environmental variables are required for the container to function. 
 
-    generate_docker-compose.sh
-
-The script takes the following details about your InfluxDB and your Sense credentials as environmental variables:
-
-    SENSE_COLLECTOR_INFLUXDB_PASSWORD
-    SENSE_COLLECTOR_INFLUXDB_URL
-    SENSE_COLLECTOR_INFLUXDB_USERNAME
-    SENSE_COLLECTOR_PASSWORD
-    SENSE_COLLECTOR_USERNAME
+      SENSE_COLLECTOR_API_PASSWORD
+      SENSE_COLLECTOR_API_USERNAME
+      SENSE_COLLECTOR_INFLUXDB_BUCKET
+      SENSE_COLLECTOR_INFLUXDB_ORG
+      SENSE_COLLECTOR_INFLUXDB_TOKEN
+      SENSE_COLLECTOR_INFLUXDB_URL
 
 The username and password are the same that you use in your Sense mobile app or the Sense Web app.
 
-An example command line would be (be sure to use your own personal access token):
+An example command line would be (be sure to change all of the variables):
 
-    SENSE_COLLECTOR_INFLUXDB_PASSWORD="5Q7c7hwQtsZtCrXW" \
-    SENSE_COLLECTOR_INFLUXDB_URL="http://influxdb01.com:8086/write?db=sense" \
-    SENSE_COLLECTOR_INFLUXDB_USERNAME="senseuser" \
-    SENSE_COLLECTOR_PASSWORD="twFQ8P3XBj55DvMw" \
-    SENSE_COLLECTOR_USERNAME="lux4rd0@domain.com" \
-    bash ./generate_docker-compose.sh
+To start the docker container, simply update this example compose.yaml file:
 
-The following file will be generated for you:
-
-#### `docker-compose.yml`
-
-An example of this docker-compose.yml file is included in this repository.
-
+    name: sense-collector-53997
     services:
-      sense-collector:
-        container_name: sense-collector-72535
+      sense-collector-53997:
+        container_name: sense-collector-53997
         environment:
+          SENSE_COLLECTOR_API_PASSWORD: CHANGEME
+          SENSE_COLLECTOR_API_USERNAME: dave@pulpfree.org
           SENSE_COLLECTOR_HOST_HOSTNAME: sense-collector.lux4rd0.com
-          SENSE_COLLECTOR_INFLUXDB_PASSWORD: none
-          SENSE_COLLECTOR_INFLUXDB_URL: http://influxdb01.lux4rd0.com:8086/write?db=sense
-          SENSE_COLLECTOR_INFLUXDB_USERNAME: none
-          SENSE_COLLECTOR_MONITOR_ID: 72535
-          SENSE_COLLECTOR_TOKEN: t1.1476.1474.8e6dc77daf22e1fb471d7b942w97e477d1es53bcf2d72
+          SENSE_COLLECTOR_INFLUXDB_BUCKET: sense
+          SENSE_COLLECTOR_INFLUXDB_ORG: Tylephony
+          SENSE_COLLECTOR_INFLUXDB_TOKEN: TOKEN
+          SENSE_COLLECTOR_INFLUXDB_URL: http://sense-collector.lux4rd0.com:8086
+          SENSE_COLLECTOR_LOG_LEVEL_API: CRITICAL
+          SENSE_COLLECTOR_LOG_LEVEL_GENERAL: INFO
+          SENSE_COLLECTOR_LOG_LEVEL_STORAGE: CRITICAL
+          SENSE_COLLECTOR_SENSE_API_RECEIVE_DATA_OUTPUT: "False"
           TZ: America/Chicago
         image: lux4rd0/sense-collector:latest
         restart: always
-    version: '3.3'
+        volumes:
+          - type: bind
+            source: /mnt/docker/sense-collector/export
+            target: /app/export
+            bind:
+              create_host_path: true
 
 If you don't want to use docker-compose, an example docker run command will be displayed on the screen.
 
     docker run --rm \
-      --name=sense-collector-72535 \
-      -e SENSE_COLLECTOR_HOST_HOSTNAME=app02.tylephony.com \
-      -e SENSE_COLLECTOR_INFLUXDB_PASSWORD=5Q7c7hwQtsZtCrXW \
-      -e SENSE_COLLECTOR_INFLUXDB_URL=http://influxdb01.lux4rd0.com:8086/write?db=sense \
-      -e SENSE_COLLECTOR_INFLUXDB_USERNAME=senseuser \
-      -e SENSE_COLLECTOR_MONITOR_ID=72535 \
-      -e SENSE_COLLECTOR_TOKEN=t1.1476.1474.8e6dc77daf22e1fb471d7b942w97e477d1es53bcf2d72 \
+      --name=sense-collector-53997 \
+      -e SENSE_COLLECTOR_API_PASSWORD=CHANGEME \
+      -e SENSE_COLLECTOR_API_USERNAME=dave@pulpfree.org \
+      -e SENSE_COLLECTOR_HOST_HOSTNAME=sense-collector.lux4rd0.com \
+      -e SENSE_COLLECTOR_INFLUXDB_BUCKET=sense \
+      -e SENSE_COLLECTOR_INFLUXDB_ORG=Tylephony \
+      -e SENSE_COLLECTOR_INFLUXDB_TOKEN=TOKEN \
+      -e SENSE_COLLECTOR_INFLUXDB_URL=http://sense-collector.lux4rd0.com:8086 \
+      -e SENSE_COLLECTOR_LOG_LEVEL_API=CRITICAL \
+      -e SENSE_COLLECTOR_LOG_LEVEL_GENERAL=INFO \
+      -e SENSE_COLLECTOR_LOG_LEVEL_STORAGE=CRITICAL \
+      -e SENSE_COLLECTOR_SENSE_API_RECEIVE_DATA_OUTPUT="False" \
       -e TZ=America/Chicago \
+      -v /mnt/docker/sense-collector/export:/app/export \
       --restart always \
       lux4rd0/sense-collector:latest
 
@@ -89,118 +93,78 @@ Running `docker-compose up -d' or the `docker-run` command will download and sta
 
 The Docker contain can be configured with additional environment flags to control collector behaviors. They are descript below:
 
-`SENSE_COLLECTOR_DEBUG` - OPTIONAL
+# Sense Collector Environmental Variables
 
-Outputs additional logging. Defaults to false.
+This document provides a detailed explanation of the environmental variables used to configure the Sense Collector Docker container. Each variable is classified as either required or optional, along with its default value and possible options.
 
-- false
-- true
+## Environmental Variables
 
-`SENSE_COLLECTOR_DEBUG_CURL` - OPTIONAL
+### SENSE_COLLECTOR_API_PASSWORD
+- **Description**: The password for authenticating with the Sense API.
+- **Required**: Yes
+- **Default**: None
+- **Options**: User-provided password
 
-Outputs additional logging specific to the curl commands to collect data from Sense and persist data to InfluxDB. Defaults to false.
+### SENSE_COLLECTOR_API_USERNAME
+- **Description**: The username (email address) for authenticating with the Sense API.
+- **Required**: Yes
+- **Default**: None
+- **Options**: User-provided email address
 
-- true
-- false
+### SENSE_COLLECTOR_HOST_HOSTNAME
+- **Description**: The hostname that is running the Docker container. Used in the Collector Info dashboard to know where the Collector is running.
+- **Required**: No
+- **Default**: None
+- **Options**: User-provided hostname
 
-`SENSE_COLLECTOR_DEBUG_IF` - OPTIONAL
+### SENSE_COLLECTOR_INFLUXDB_BUCKET
+- **Description**: The bucket name in InfluxDB where data will be stored.
+- **Required**: Yes
+- **Default**: None
+- **Options**: User-provided bucket name
 
-Outputs additional logging specific to script validation. Defaults to false.
+### SENSE_COLLECTOR_INFLUXDB_ORG
+- **Description**: The organization name in InfluxDB.
+- **Required**: Yes
+- **Default**: None
+- **Options**: User-provided organization name
 
-- true
-- false
+### SENSE_COLLECTOR_INFLUXDB_TOKEN
+- **Description**: The authentication token for InfluxDB.
+- **Required**: Yes
+- **Default**: None
+- **Options**: User-provided token
 
-`SENSE_COLLECTOR_DEBUG_SLEEPING` - OPTIONAL
+### SENSE_COLLECTOR_INFLUXDB_URL
+- **Description**: The URL of the InfluxDB instance where data will be written.
+- **Required**: Yes
+- **Default**: None
+- **Options**: User-provided URL
 
-Outputs additional logging specific to when the Collector is sleeping between polling. Sometimes you want to see if it's doing anything. Defaults to false.
+### SENSE_COLLECTOR_LOG_LEVEL_API
+- **Description**: Sets the logging level for the API interactions.
+- **Required**: No
+- **Default**: INFO
+- **Options**: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-- true
-- false
+### SENSE_COLLECTOR_LOG_LEVEL_GENERAL
+- **Description**: Sets the general logging level for the application.
+- **Required**: No
+- **Default**: INFO
+- **Options**: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-`SENSE_COLLECTOR_DISABLE_DEVICE_DETAILS` - OPTIONAL
+### SENSE_COLLECTOR_LOG_LEVEL_STORAGE
+- **Description**: Sets the logging level for storage operations.
+- **Required**: No
+- **Default**: INFO
+- **Options**: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-Disables or enables the Device Details process. Defaults to false if not set.
+### SENSE_COLLECTOR_SENSE_API_RECEIVE_DATA_OUTPUT
+- **Description**: Enables or disables the output of received Sense API data to a file.
+- **Required**: No
+- **Default**: false
+- **Options**: true, false
 
-- true
-- false
-
-`SENSE_COLLECTOR_DISABLE_HEALTH_CHECK` - OPTIONAL
-
-Disables or enables the Health Check process. Defaults to false if not set.
-
-- true
-- false
-
-`SENSE_COLLECTOR_DISABLE_HOST_PERFORMANCE` - OPTIONAL
-
-Disables or enables the Host Performance process. Defaults to false if not set.
-
-- true
-- false
-
-`SENSE_COLLECTOR_DISABLE_MONITOR_STATUS` - OPTIONAL
-
-Disables or enables the Monitor Status process. Defaults to false if not set.
-
-- true
-- false
-
-`SENSE_COLLECTOR_DISABLE_SENSE_COLLECTOR` - OPTIONAL
-
-Disables or enables the Sense Collector process. Defaults to false if not set.
-
-- true
-- false
-
-`SENSE_COLLECTOR_HOST_HOSTNAME` - OPTIONAL
-
-This value represents the hostname that is running the Docker container. Docker creates a unique hostname each time a docker container is recycled. This entry is used in the Collector Info dashboard to know where the Collector is running. This value is populated when the `generate_docker-compose.sh` script generates the `docker-compose.yml` file.
-
-`SENSE_COLLECTOR_HOST_PERFORMANCE_POLL_INTERVAL` - OPTIONAL
-
-Time in seconds that the Host Performance process polls the host for performance details. Defaults to 60 (seconds).
-
-`SENSE_COLLECTOR_INFLUXDB_PASSWORD` - REQUIRED
-
-The password to your InfluxDB database instance. If you use the `generate_docker-compose.sh` script, it defaults to "password". It is a **required** environment variable.
-
-`SENSE_COLLECTOR_INFLUXDB_URL` - REQUIRED
-
-The URL required to persist data to InfluxDB. If you use the `generate_docker-compose.sh` script, it defaults to "http://influxdb:8086/write?db=sense". It is a **required** environment variable.
-
-`SENSE_COLLECTOR_INFLUXDB_USERNAME` - REQUIRED
-
-The username to your InfluxDB database instance. If you use the `generate_docker-compose.sh` script, it defaults to "influxdb". It is a **required** environment variable.
-
-`SENSE_COLLECTOR_MONITOR_ID` - REQUIRED
-
-The ID of your Sense monitor. If you use the generate_docker-compose.sh script, it will be automatically added to your docker-compose.yml or docker-compose run command for you based on your Sense username and password. There's no way to know this ID from the Sense mobile or Web app. It is a **required** environment variable.
-
-`SENSE_COLLECTOR_MONITOR_STATUS_POLL_INTERVAL` - OPTIONAL
-
-Time in seconds that the Monitor Status process polls the Sense monitor for details. Defaults to 60 (seconds).
-
-`SENSE_COLLECTOR_SENSE_COLLECTOR_POLL_INTERVAL` - OPTIONAL
-
-Determines how often the core Sense Collector polls mains and device information. There are two types of collections possible:
-
- - stream
-
-Allows for ingesting all of the stream data from the Sense socket API. The data is generally updated about two times a second and provides a very high granularity of metric data on all of your mains and devices. However, depending on the performance of the running Sense Collector host, it may fall behind on processing data as well as possibly higher CPU utilization. Take a look at the Collector Info dashboard for more understanding of the Sense Collector utilization.
-
-or
-
- - 5, 10, 15, 30, or 60
-
-If streaming data is not an option or a desire to reduce the amount of CPU being consumed, use one of these settings (measured in seconds). When these settings are provided, the data stream is still passed through the Sense Collector to listen for timeline events but will only process mains and device details on the polling interval provided.
-
-`SENSE_COLLECTOR_THREADS` - OPTIONAL
-
-The number of threads used for processing device details. Defaults to 4. Threads should be set to something close to the number of CPUs on your host. For slower processing hosts, lowering this and using a polling interval may be helpful.
-
-`SENSE_COLLECTOR_TOKEN` - REQUIRED
-
-The authentication token for your Sense monitor. If you use the generate_docker-compose.sh script, it will be automatically added to your docker-compose.yml or docker-compose run command for you based on your Sense username and password. There's no way to obtain this token from the Sense mobile or Web app. It is a **required** environment variable.
 
 ## Collector Details
 
@@ -218,17 +182,9 @@ Device Details polls the Sense API to gather details on each of your devices. Th
 
 avg_duration, avg_monthly_KWH, avg_monthly_cost, avg_monthly_cost, avg_monthly_pct, avg_monthly_runs, avg_watts, current_ao_wattage, current_month_KWH, current_month_cost, current_month_runs, icon, last_state, last_state_time, name, yearly_KWH, yearly_cost, yearly_text
 
-#### host-performance
-
-Host Performance is a process that gathers CPU, process details, netstat, process counts, and memory utilization. These details are viewable in the Collector Info Grafana dashboard.
-
 #### monitor-status
 
 Monitor Status gathers details about the Sense monitor and detection status for both in progress and found devices. Monitor details include: emac, ethernet, ip_address, mac, ndt_enabled, online, progress, serial, signal, ssid, status, test_result, version, wifi_strength
-
-#### health-check
-
-Health Check is a function that runs every 60 seconds to validate the health of the running processes. If no data has been collected or persisted to InfluxDB and this parameter is set to true, the docker container will be marked as Unhealthy and terminate. Setting this to false will always return a healthy response to the Docker health check. The health check is included as there may be times when the socket connection goes silent, and recycling the container is the only way to get it listening again.
 
 ## Grafana Dashboards
 
@@ -282,7 +238,7 @@ Each dashboard has dropdowns at the top that provide for filtering of measuremen
 
 **Always On Devices**: Shows which devices that the Sense monitor has detected to have an Always On wattage component. This may be different than actual wattage and tends to update less frequently.
 
-> **Notice**: This Grafana dashboard uses the community visualization [Bubble Chart](https://grafana.com/grafana/plugins/digrich-bubblechart-panel/) panel plugin. It hasn't been updated for quite some time and won't work out of the box with current versions of Grafana due to plugin signing requirements. [Configuration changes](https://grafana.com/docs/grafana/latest/administration/configuration/#allow_loading_unsigned_plugins) on your Grafana instance will be needed to load this plugin.
+> **Notice**: This Grafana dashboard uses the community visualization [Bubble Chart](https://grafana.com/grafana/plugins/digrich-bubblechart-panel/) panel plugin. 
 
 ### Mains Overview - [14736](https://grafana.com/grafana/dashboards/14736)
 
@@ -325,3 +281,4 @@ Project Link: https://github.com/lux4rd0/sense-collector
 - Grafana Labs - [https://grafana.com/](https://grafana.com/)
 - Grafana - [https://grafana.com/oss/grafana/](https://grafana.com/oss/grafana/)
 - Grafana Dashboard Community - [https://grafana.com/grafana/dashboards/](https://grafana.com/grafana/dashboards/)
+
