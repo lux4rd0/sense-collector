@@ -4,13 +4,13 @@
 
 <center><img src="https://labs.lux4rd0.com/wp-content/uploads/2021/07/sense_collector_header.png"></center>
 
-**Sense Collector** is a set of scripts deployed with Docker that collect data from the [Sense](https://sense.com/) energy monitoring system. Once deployed, this collection of Grafana dashboards will help you start visualizing that data. If you're just getting started with Grafana, InfluxDB, and Sense.
+**Sense Collector** is a Python application deployed with Docker that collects data from the [Sense](https://sense.com/) energy monitoring system. Once deployed, this collection of Grafana dashboards will help you start visualizing that data.
 
-A live set of dashboards using this Collector [are available](https://labs.lux4rd0.com/sense-collector/) for you to try out.
+A live set of these dashboards [are available](https://labs.lux4rd0.com/sense-collector/) to view.
 
 ## Getting Started
 
-The project builds a pre-configured Docker container that takes different configurations based on how often you wish to poll your Sense device and where you want to store your data.
+The project is deployed as a Docker container.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ Correct environmental variables are required for the container to function.
       SENSE_COLLECTOR_INFLUXDB_TOKEN
       SENSE_COLLECTOR_INFLUXDB_URL
 
-The username and password are the same as those used in the Sense mobile app or the Sense Web app.
+The username and password are the same as those used in the Sense mobile or Sense Web apps.
 
 An example command line would be (be sure to change all of the variables):
 
@@ -188,19 +188,19 @@ Monitor Status gathers details about the Sense monitor and detection status for 
 
 ## Grafana Dashboards
 
-Collecting data is only half the fun. Now it's time to provision some Grafana Dashboards to visualize your essential Sense data. You'll find a [folder of dashboards](https://github.com/lux4rd0/sense-collector/dashboards) with collectors and backends split out. You can also use the links/numbers next to each dashboard title to load the dashboards in [directly from Grafana](https://grafana.com/grafana/dashboards?search=sense%20collector).
+Collecting data is only half the fun. Now it's time to provision some Grafana Dashboards to visualize your essential Sense data. You'll find a [folder of dashboards](https://github.com/lux4rd0/sense-collector/dashboards) with collectors and backends split out. You can also use the links/numbers next to each dashboard title to load the dashboards [directly from Grafana](https://grafana.com/grafana/dashboards?search=sense%20collector).
 
 ### In General:
 
-Each dashboard has dropdowns at the top that allow you to filter measurements based on devices and plugs. The dropdowns default to "All," but you can certainly select and save preferences.
+Each dashboard has dropdowns at the top that allow you to filter measurements based on devices and plugs. The dropdowns default to "All," but you can select and save preferences.
 
-**Interval**:  A dropdown that provides different smoothing levels helps manage how the graphs look based on the interval of data being collected by the Sense Collector. Think of this as a level of "smoothing" based on your chosen time frame and the quantity of data collected (streaming versus polled data.)
+**Interval**:  A dropdown that provides different smoothing levels helps manage how the graphs look based on the interval of data collected by the Sense Collector. Think of this as a level of "smoothing" based on your chosen time frame and the quantity of data collected.
 
 **Device Status On/Off/Idle**: These three toggles overlay event annotations in the Wattage By Devices panels and the Wattage, Volts, and Hz panels in the Mains Overview dashboard.
 
-**Sense Collector Dashboard Links**: This dropdown in the top right-hand corner provides easy access to the other dashboards in this collection. The links maintain the current time range and any variables that have been changed between dashboards. For example, if you change the time range from "Today so far" to "Last 7 days," it'll stay the same between dashboards. The same goes for any selected devices and Interval smoothing.
+**Sense Collector Dashboard Links**: This dropdown in the top right-hand corner provides easy access to the other dashboards in this collection.
 
-**Time Range**: This defaults to "Today so far" but can be updated to any other Relative or Absolute time range. For longer time ranges, change the "Interval" dropdown to smooth out any of the data.
+**Time Range**: This defaults to "Today so far" but can be updated to any other Relative or Absolute time range. Change the "Interval" dropdown for longer time ranges to smooth out any of the data.
 
 **Dashboard Refresh**: Each dashboard is set to refresh every sixty seconds, but this can be changed or disabled.
 
@@ -228,13 +228,15 @@ Each dashboard has dropdowns at the top that allow you to filter measurements ba
 
 **Device Status**: This is a State Timeline representing event data from the Sensor Monitor over time. It currently represents three states: On, Off, and Idle.
 
-**Device Details—Average**: This is a table view of current data representing the current state, state time, watts in use, average, and always on makeup. Average duration, monthly kWh, percent, and the number of runs are also listed. This table defaults to being sorted by "Watts (In Use)."
+**Event Timeline**: This table view shows each device's state change.
 
-**Device Details—Current Month**: Shows the number of runs per device since the start of the current month.
+**Device Details - Average**: This is a table view of current data representing the current state, state time, watts in use, average, and always on makeup. Average duration, monthly kWh, percent, and the number of runs are also listed. This table defaults to being sorted by "Watts (In Use)."
 
-**Device Details—Yearly**: This shows the calculated kWh and costs for each device. The text next to each device provides details on how the costs are calculated, such as "Based on the last 30 days," "Based on the last 7 days," or "Based on last season."
+**Device Details - Current Month**: Shows the number of runs per device since the start of the current month.
 
-**Plug Details**: If you have any of the [Sense compatible](https://help.sense.com/hc/en-us/articles/360012089393-What-smart-plugs-are-compatible-with-Sense-) smart plugs, they will be listed here as well. Open up this row to display the voltages and amps measured by each plug. There's another measurement (Who Knows By Plugs), but I don't know what it does yet.
+**Device Details - Yearly**: Each device's calculated kWh and costs. The text next to each device provides details on how the costs are calculated, such as "Based on the last 30 days," "Based on the last 7 days," or "Based on last season."
+
+**Smart Device Details**: If you have any of the [Sense compatible](https://help.sense.com/hc/en-us/articles/360012089393-What-smart-plugs-are-compatible-with-Sense-) smart plugs, they will be listed here as well. Open up this row to display the voltages and amps measured by each plug. There's another measurement (Who Knows By Plugs), but I don't know what it does yet.
 
 **Always On Devices**: This shows which devices the Sense monitor has detected have an Always On wattage component. This may be different from actual wattage and tends to update less frequently.
 
@@ -264,7 +266,7 @@ The Sense Collector and dashboards currently only support a single Sense instanc
 
 ### Time Zone Variable
 
-A TZ variable is used when running the Docker container based on what value is returned during the initial docker-compose configuration scripts. It's not currently in use in any of the current dashboards.
+A TZ variable is used when running the Docker container based on the value returned during the initial docker-compose configuration scripts. It's not currently in use in any of the current dashboards.
 
 ## Roadmap
 
