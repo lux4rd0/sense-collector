@@ -4,7 +4,7 @@
 
 <center><img src="https://labs.lux4rd0.com/wp-content/uploads/2021/07/sense_collector_header.png"></center>
 
-**Sense Collector** is a Python application deployed with Docker that collects data from the [Sense](https://sense.com/) energy monitoring system. Once deployed, this collection of Grafana dashboards will help you start visualizing that data.
+**Sense Collector** is a Python application deployed with Docker designed to efficiently collect data from the [Sense](https://sense.com/) energy monitoring system. Once deployed, Sense Collector provides a comprehensive set of Grafana dashboards, enabling you to visualize and effortlessly analyze your energy usage data in real-time. Whether starting with Grafana, InfluxDB, and Sense or looking to enhance your existing setup, Sense Collector offers an intuitive and powerful solution for monitoring and understanding your energy consumption.
 
 A live set of these dashboards [are available](https://labs.lux4rd0.com/sense-collector/) to view.
 
