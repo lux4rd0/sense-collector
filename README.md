@@ -234,7 +234,7 @@ Each dashboard has dropdowns at the top that allow you to filter measurements ba
 
 **Device Details - Current Month**: Shows the number of runs per device since the start of the current month.
 
-**Device Details - Yearly**: Each device's calculated kWh and costs. The text next to each device provides details on how the costs are calculated, such as "Based on the last 30 days," "Based on the last 7 days," or "Based on last season."
+**Device Details - Yearly**: This section shows each device's calculated kWh and costs. The text next to each device provides details on how the costs are calculated, such as "Based on the last 30 days," "Based on the last 7 days," or "Based on last season."
 
 **Smart Device Details**: If you have any of the [Sense compatible](https://help.sense.com/hc/en-us/articles/360012089393-What-smart-plugs-are-compatible-with-Sense-) smart plugs, they will be listed here as well. Open up this row to display the voltages and amps measured by each plug. There's another measurement (Who Knows By Plugs), but I don't know what it does yet.
 
