@@ -16,7 +16,7 @@ The project is deployed as a Docker container.
 
 - [Docker](https://docs.docker.com/install)
 - [Docker Compose](https://docs.docker.com/compose/install)
-- [InfluxDB 2.x](https://docs.influxdata.com/influxdb/v2/) 
+- [InfluxDB 2.x](https://docs.influxdata.com/influxdb/v2/) (The latest version of the Sense Collector no longer works with InfluxDB V1)
 - [Grafana 11.0.0](https://grafana.com/oss/grafana/)
 
 ## Deploying the Sense Collector
