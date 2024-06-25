@@ -23,7 +23,7 @@ The project is deployed as a Docker container.
 
 Use the following [Docker container](https://hub.docker.com/r/lux4rd0/sense-collector):
 
-    lux4rd0/sense-collector:2.0.03
+    lux4rd0/sense-collector:2.0.06
     lux4rd0/sense-collector:latest
     
 Correct environmental variables are required for the container to function. 
@@ -47,43 +47,28 @@ To start the docker container, simply update this example compose.yaml file:
         container_name: sense-collector-53997
         environment:
           SENSE_COLLECTOR_API_PASSWORD: CHANGEME
-          SENSE_COLLECTOR_API_USERNAME: dave@pulpfree.org
+          SENSE_COLLECTOR_API_USERNAME: dave@lux4rd0.com
           SENSE_COLLECTOR_HOST_HOSTNAME: sense-collector.lux4rd0.com
           SENSE_COLLECTOR_INFLUXDB_BUCKET: sense
-          SENSE_COLLECTOR_INFLUXDB_ORG: Tylephony
+          SENSE_COLLECTOR_INFLUXDB_ORG: Lux4rd0
           SENSE_COLLECTOR_INFLUXDB_TOKEN: TOKEN
           SENSE_COLLECTOR_INFLUXDB_URL: http://sense-collector.lux4rd0.com:8086
-          SENSE_COLLECTOR_LOG_LEVEL_API: CRITICAL
-          SENSE_COLLECTOR_LOG_LEVEL_GENERAL: INFO
-          SENSE_COLLECTOR_LOG_LEVEL_STORAGE: CRITICAL
-          SENSE_COLLECTOR_SENSE_API_RECEIVE_DATA_OUTPUT: "False"
           TZ: America/Chicago
         image: lux4rd0/sense-collector:latest
         restart: always
-        volumes:
-          - type: bind
-            source: /mnt/docker/sense-collector/export
-            target: /app/export
-            bind:
-              create_host_path: true
 
 If you don't want to use docker-compose, an example docker run command will be displayed on the screen.
 
     docker run --rm \
       --name=sense-collector-53997 \
       -e SENSE_COLLECTOR_API_PASSWORD=CHANGEME \
-      -e SENSE_COLLECTOR_API_USERNAME=dave@pulpfree.org \
+      -e SENSE_COLLECTOR_API_USERNAME=dave@lux4rd0.com \
       -e SENSE_COLLECTOR_HOST_HOSTNAME=sense-collector.lux4rd0.com \
       -e SENSE_COLLECTOR_INFLUXDB_BUCKET=sense \
       -e SENSE_COLLECTOR_INFLUXDB_ORG=Tylephony \
       -e SENSE_COLLECTOR_INFLUXDB_TOKEN=TOKEN \
       -e SENSE_COLLECTOR_INFLUXDB_URL=http://sense-collector.lux4rd0.com:8086 \
-      -e SENSE_COLLECTOR_LOG_LEVEL_API=CRITICAL \
-      -e SENSE_COLLECTOR_LOG_LEVEL_GENERAL=INFO \
-      -e SENSE_COLLECTOR_LOG_LEVEL_STORAGE=CRITICAL \
-      -e SENSE_COLLECTOR_SENSE_API_RECEIVE_DATA_OUTPUT="False" \
       -e TZ=America/Chicago \
-      -v /mnt/docker/sense-collector/export:/app/export \
       --restart always \
       lux4rd0/sense-collector:latest
 
@@ -91,11 +76,11 @@ Running `docker-compose up -d' or the `docker-run` command will download and sta
 
 ## Environmental Flags:
 
-The Docker contain can be configured with additional environment flags to control collector behaviors. They are descript below:
+The Docker contain can be configured with additional environment flags to control collector behaviors. They are described below:
 
 # Sense Collector Environmental Variables
 
-This document provides a detailed explanation of the environmental variables used to configure the Sense Collector Docker container. Each variable is classified as required or optional, along with its default value and possible options.
+This document provides a detailed explanation of the environmental variables used to configure the Sense Collector Docker container. Each variable is classified as required or optional, with its default value and possible options.
 
 ## Environmental Variables
 
@@ -159,12 +144,71 @@ This document provides a detailed explanation of the environmental variables use
 - **Default**: INFO
 - **Options**: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-### SENSE_COLLECTOR_SENSE_API_RECEIVE_DATA_OUTPUT
+### SENSE_COLLECTOR_OUTPUT_RECEIVED_DATA
 - **Description**: Enables or disables the output of received Sense API data to a file.
 - **Required**: No
 - **Default**: false
 - **Options**: true, false
 
+### SENSE_COLLECTOR_WS_HEARTBEAT_INTERVAL
+- **Description**: Interval (in seconds) between heartbeat messages to keep the WebSocket connection alive.
+- **Required**: No
+- **Default**: 10
+- **Options**: Integer value representing seconds
+
+### SENSE_COLLECTOR_WS_HEARTBEAT_TIMEOUT
+- **Description**: Timeout (in seconds) to wait for a heartbeat response before considering the WebSocket connection as dead.
+- **Required**: No
+- **Default**: 30
+- **Options**: Integer value representing seconds
+
+### SENSE_COLLECTOR_WS_RECONNECT_DELAY_INITIAL
+- **Description**: Initial delay (in seconds) before attempting to reconnect the WebSocket after a connection loss.
+- **Required**: No
+- **Default**: 5
+- **Options**: Integer value representing seconds
+
+### SENSE_COLLECTOR_WS_RECONNECT_DELAY_CAP
+- **Description**: Maximum delay (in seconds) between reconnection attempts.
+- **Required**: No
+- **Default**: 60
+- **Options**: Integer value representing seconds
+
+### SENSE_COLLECTOR_WS_MAX_RETRIES
+- **Description**: Maximum number of retries for reconnecting the WebSocket before giving up.
+- **Required**: No
+- **Default**: 3
+- **Options**: Integer value
+
+### SENSE_COLLECTOR_WS_BACKOFF_FACTOR
+- **Description**: Factor for exponential backoff between reconnection attempts.
+- **Required**: No
+- **Default**: 1
+- **Options**: Integer value
+
+### SENSE_COLLECTOR_WS_RECONNECT_INTERVAL
+- **Description**: Interval (in seconds) between forced WebSocket reconnections to maintain a fresh connection.
+- **Required**: No
+- **Default**: 840
+- **Options**: Integer value representing seconds
+
+### SENSE_COLLECTOR_DEVICE_CACHE_EXPIRY_SECONDS
+- **Description**: Duration (in seconds) for which the device data should be cached before it expires.
+- **Required**: No
+- **Default**: 120
+- **Options**: Integer value representing seconds
+
+### SENSE_COLLECTOR_DEVICE_MAX_CONCURRENT_LOOKUPS
+- **Description**: Maximum number of concurrent lookups that can be performed for device data.
+- **Required**: No
+- **Default**: 4
+- **Options**: Integer value
+
+### SENSE_COLLECTOR_DEVICE_LOOKUP_DELAY_SECONDS
+- **Description**: Delay (in seconds) between consecutive device data lookup requests.
+- **Required**: No
+- **Default**: 0.5
+- **Options**: Float value representing seconds
 
 ## Collector Details
 
