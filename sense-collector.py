@@ -5,18 +5,68 @@ import sys
 import time
 from datetime import datetime, timezone, timedelta
 import aiohttp
+from aiohttp import ClientError, ClientConnectionError, WSMsgType
+
 from storage import InfluxDBStorage
 import logging
 
-# Configure logging based on environment variables
-log_level_api = os.getenv("SENSE_COLLECTOR_LOG_LEVEL_API", "INFO").upper()
-log_level_storage = os.getenv("SENSE_COLLECTOR_LOG_LEVEL_STORAGE", "INFO").upper()
-log_level_general = os.getenv("SENSE_COLLECTOR_LOG_LEVEL_GENERAL", "INFO").upper()
-sense_api_receive_data_output = (
-    os.getenv("SENSE_COLLECTOR_SENSE_API_RECEIVE_DATA_OUTPUT", "false").lower()
-    == "true"
+# Set defaults for heartbeat interval, timeout, and reconnect delay
+
+# Interval in seconds between heartbeats sent over the WebSocket connection
+heartbeat_interval = int(os.getenv("SENSE_COLLECTOR_WS_HEARTBEAT_INTERVAL", 10))
+
+# Timeout in seconds for the heartbeat over the WebSocket connection
+heartbeat_timeout = int(os.getenv("SENSE_COLLECTOR_WS_HEARTBEAT_TIMEOUT", 30))
+
+# Initial delay in seconds before attempting to reconnect after a disconnection
+reconnect_delay_initial = int(
+    os.getenv("SENSE_COLLECTOR_WS_RECONNECT_DELAY_INITIAL", 5)
 )
 
+# Maximum delay in seconds between reconnection attempts
+reconnect_delay_cap = int(os.getenv("SENSE_COLLECTOR_WS_RECONNECT_DELAY_CAP", 60))
+
+# Maximum number of retries for reconnecting the WebSocket connection
+max_retries = int(os.getenv("SENSE_COLLECTOR_WS_MAX_RETRIES", 3))
+
+# Factor to increase the delay between reconnection attempts
+backoff_factor = int(os.getenv("SENSE_COLLECTOR_WS_BACKOFF_FACTOR", 1))
+
+# Interval in seconds after which the WebSocket connection will be forcefully reconnected
+reconnect_interval = int(os.getenv("SENSE_COLLECTOR_WS_RECONNECT_INTERVAL", 840))
+
+
+# Time in seconds before cached device data expires and needs to be fetched again
+device_cache_expiry_seconds = int(
+    os.getenv("SENSE_COLLECTOR_DEVICE_CACHE_EXPIRY_SECONDS", 120)
+)
+
+# Maximum number of concurrent device data lookups to perform at any given time
+device_max_concurrent_lookups = int(
+    os.getenv("SENSE_COLLECTOR_DEVICE_MAX_CONCURRENT_LOOKUPS", 4)
+)
+
+# Delay in seconds between consecutive device data lookups to prevent overloading the server
+device_lookup_delay_seconds = float(
+    os.getenv("SENSE_COLLECTOR_DEVICE_LOOKUP_DELAY_SECONDS", 0.5)
+)
+
+
+# Configure logging based on environment variables
+
+# Log level for API related logs
+log_level_api = os.getenv("SENSE_COLLECTOR_LOG_LEVEL_API", "INFO").upper()
+
+# Log level for storage related logs
+log_level_storage = os.getenv("SENSE_COLLECTOR_LOG_LEVEL_STORAGE", "INFO").upper()
+
+# General log level
+log_level_general = os.getenv("SENSE_COLLECTOR_LOG_LEVEL_GENERAL", "INFO").upper()
+
+# Whether to output received data to a file
+output_received_data = (
+    os.getenv("SENSE_COLLECTOR_OUTPUT_RECEIVED_DATA", "false").lower() == "true"
+)
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s:%(name)s:%(message)s",
@@ -63,16 +113,7 @@ async def authenticate_with_sense(username, password):
 
 
 class SenseCollector:
-    def __init__(
-        self,
-        monitor_id,
-        token,
-        influxdb_storage,
-        user_id,
-        cache_expiry_seconds=120,
-        max_concurrent_lookups=4,
-        lookup_delay_seconds=1,
-    ):
+    def __init__(self, monitor_id, token, influxdb_storage, user_id):
         self.monitor_id = monitor_id
         self.token = token
         self.user_id = user_id
@@ -88,10 +129,8 @@ class SenseCollector:
         self.influxdb_storage = influxdb_storage
         self.api_call_queue = asyncio.Queue()
         self.device_cache = {}
-        self.cache_expiry_seconds = cache_expiry_seconds
-        self.max_concurrent_lookups = max_concurrent_lookups
-        self.lookup_delay_seconds = lookup_delay_seconds
-        self.semaphore = asyncio.Semaphore(max_concurrent_lookups)
+
+        self.semaphore = asyncio.Semaphore(device_max_concurrent_lookups)
         self.session = None
 
     async def start_session(self):
@@ -106,6 +145,7 @@ class SenseCollector:
             queue_item = await self.api_call_queue.get()
             device_id = queue_item.get("device_id")
 
+            api_logger.debug(f"Starting lookup for device_id: {device_id}")
             try:
                 device_data = await self.lookup_device_data(device_id)
                 if device_data:
@@ -114,8 +154,9 @@ class SenseCollector:
                 api_logger.error(f"Error processing device {device_id}: {e}")
             finally:
                 self.api_call_queue.task_done()
+                api_logger.debug(f"Finished processing for device_id: {device_id}")
 
-    async def create_connection(self, max_retries=3, backoff_factor=1):
+    async def create_connection(self):
         ws_url = SenseAPIEndpoints.REALTIME_FEED.format(monitor_id=self.monitor_id)
         for attempt in range(max_retries):
             try:
@@ -144,59 +185,184 @@ class SenseCollector:
         while True:
             try:
                 await self.create_connection()
-                async for msg in self.ws:
-                    if msg.type == aiohttp.WSMsgType.TEXT:
-                        data = json.loads(msg.data)
-                        if sense_api_receive_data_output:
-                            export_file_path = os.path.join(
-                                export_folder, "received_data.json"
+                last_heartbeat_time = time.time()
+                reconnect_time = last_heartbeat_time + reconnect_interval
+                next_reconnect_time = datetime.now() + timedelta(
+                    seconds=reconnect_interval
+                )
+                api_logger.info(
+                    f"Next forced reconnect attempt at {next_reconnect_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                )
+
+                while True:
+                    try:
+                        msg = await asyncio.wait_for(
+                            self.ws.receive(), timeout=heartbeat_interval
+                        )
+                        if msg.type == WSMsgType.TEXT:
+                            data = json.loads(msg.data)
+                            if output_received_data:
+                                export_file_path = os.path.join(
+                                    export_folder, "received_data.json"
+                                )
+                                with open(export_file_path, "a") as f:
+                                    f.write(json.dumps(data) + "\n")
+                            await self.process_and_send_data(data)
+                            last_heartbeat_time = (
+                                time.time()
+                            )  # Reset the heartbeat timer on valid data
+                            api_logger.debug(
+                                f"Data received and processed. Resetting heartbeat timer. Last heartbeat time: {last_heartbeat_time}"
                             )
-                            with open(export_file_path, "a") as f:
-                                f.write(json.dumps(data) + "\n")
-                        await self.process_and_send_data(data)
-            except Exception as e:
-                api_logger.error(f"Error in data reception: {e}")
+                        elif msg.type == WSMsgType.CLOSED:
+                            api_logger.warning(
+                                "WebSocket connection closed. Reconnecting..."
+                            )
+                            break
+                        elif msg.type == WSMsgType.ERROR:
+                            api_logger.error(
+                                f"WebSocket error: {msg.data}. Reconnecting..."
+                            )
+                            break
+
+                        # Check if it's time to send a heartbeat
+                        current_time = time.time()
+                        if current_time - last_heartbeat_time > heartbeat_interval:
+                            api_logger.info("Sending ping")
+                            await self.ws.send_json({"type": "ping"})
+                            last_heartbeat_time = current_time
+                            api_logger.info(
+                                f"Ping sent. Next ping in {heartbeat_interval} seconds"
+                            )
+
+                        # Check if it's time to reconnect based on the interval
+                        if current_time > reconnect_time:
+                            api_logger.info(
+                                f"Reconnecting after {reconnect_interval} seconds interval"
+                            )
+                            break
+
+                    except asyncio.TimeoutError:
+                        # No message received within the heartbeat interval, check the heartbeat timeout
+                        current_time = time.time()
+                        if current_time - last_heartbeat_time > heartbeat_timeout:
+                            api_logger.error(
+                                "No data received within heartbeat timeout. Reconnecting..."
+                            )
+                            break
+                    except ClientError as e:
+                        api_logger.error(
+                            f"Client error in WebSocket connection: {e}. Reconnecting..."
+                        )
+                        break
+                    except ClientConnectionError as e:
+                        api_logger.error(
+                            f"Client connection error in WebSocket connection: {e}. Reconnecting..."
+                        )
+                        break
+                    except Exception as e:
+                        api_logger.error(
+                            f"Unexpected error in WebSocket connection: {e}. Reconnecting..."
+                        )
+                        break
             finally:
                 await self.close_connection()
                 api_logger.info("Stopped data reception")
 
-            # Reconnect after a brief delay
-            api_logger.info("Attempting to reconnect in 5 seconds...")
-            await asyncio.sleep(5)
+            # Reconnect immediately if forced by our timeline
+            if time.time() > reconnect_time:
+                api_logger.info("Immediate reconnect due to forced interval.")
+                continue
+
+            # Reconnect after a brief delay with exponential backoff for other cases
+            reconnect_delay = reconnect_delay_initial
+            next_reconnect_time = datetime.now() + timedelta(seconds=reconnect_delay)
+            api_logger.info(f"Attempting to reconnect in {reconnect_delay} seconds...")
+            api_logger.info(
+                f"Next reconnect attempt at {next_reconnect_time.strftime('%Y-%m-%d %H:%M:%S')}"
+            )
+            await asyncio.sleep(reconnect_delay)
+            reconnect_delay = min(reconnect_delay * 2, reconnect_delay_cap)
+            api_logger.debug(
+                f"Reconnect delay set to: {reconnect_delay} seconds. Reconnect delay capped at: {reconnect_delay_cap} seconds"
+            )
 
     async def process_and_send_data(self, data):
-        api_logger.info("Starting to process and send data")
-        # api_logger.debug(f"Received data: {data}")
+        api_logger.debug("Starting to process and send data")
 
         try:
             data_type = data.get("type")
             api_logger.debug(f"Data type: {data_type}")
 
             if data_type == "realtime_update":
-                api_logger.info("Processing realtime update")
+                api_logger.debug("Processing realtime update")
                 await self.handle_realtime_update(data["payload"])
             elif data_type == "new_timeline_event":
-                api_logger.info("Processing new timeline event")
+                api_logger.debug("Processing new timeline event")
                 await self.handle_new_timeline_event(data["payload"])
             elif data_type == "hello":
-                api_logger.info("Processing hello event")
+                api_logger.debug("Processing hello event")
                 await self.handle_hello_event(data["payload"])
             elif data_type == "data_change":
-                api_logger.info("Processing data change event")
+                api_logger.debug("Processing data change event")
                 await self.handle_data_change_event(data["payload"])
             elif data_type == "device_states":
-                api_logger.info("Processing device states event")
+                api_logger.debug("Processing device states event")
                 await self.handle_device_states_event(data["payload"])
+            elif data_type == "monitor_info":
+                api_logger.debug("Processing monitor monitor_info event")
+                await self.handle_monitor_info_event(data["payload"])
+            elif data_type == "monitor_connection":
+                api_logger.debug("Processing monitor connection event")
+                await self.handle_monitor_connection_event(data["payload"])
+            elif data_type == "device_reactivated":
+                api_logger.debug("Processing device reactivated event")
+                await self.handle_device_reactivated_event(data["payload"])
+            elif data_type == "device_deactivated":
+                api_logger.debug("Processing device deactivated event")
+                await self.handle_device_deactivated_event(data["payload"])
             else:
-                api_logger.warning(f"Unknown data type received: {data_type}")
+                api_logger.warning(
+                    f"Unknown data type received: {data_type} - Payload: {json.dumps(data, indent=2)}"
+                )
 
         except Exception as e:
-            api_logger.error(f"Error processing data: {e}")
+            api_logger.error(
+                f"Error processing data: {e}. Payload: {json.dumps(data, indent=2)}"
+            )
         finally:
-            api_logger.info("Finished processing and sending data")
+            api_logger.debug("Finished processing and sending data")
+
+    async def handle_monitor_info_event(self, payload):
+        api_logger.debug(
+            f"Data type received: monitor_info - Payload: {json.dumps(payload, indent=2)}"
+        )
+
+    async def handle_monitor_connection_event(self, payload):
+        api_logger.debug(
+            f"Data type received: monitor_connection - Payload: {json.dumps(payload, indent=2)}"
+        )
+
+    async def handle_device_reactivated_event(self, payload):
+        api_logger.debug(
+            f"Data type received: device_reactivated - Payload: {json.dumps(payload, indent=2)}"
+        )
+
+    async def handle_device_deactivated_event(self, payload):
+        api_logger.debug(
+            f"Data type received: device_deactivated - Payload: {json.dumps(payload, indent=2)}"
+        )
 
     async def handle_realtime_update(self, payload):
-        api_logger.info("Starting to handle realtime update")
+        api_logger.debug("Starting to handle realtime update")
+
+        required_keys = ["hz", "c", "w", "epoch"]
+        missing_keys = [key for key in required_keys if key not in payload]
+
+        if missing_keys:
+            api_logger.error(f"Missing required keys in payload: {missing_keys}")
+            api_logger.debug(f"Incomplete payload: {json.dumps(payload, indent=2)}")
+            return  # Do not process further if any required key is missing
 
         try:
             hertz = float(payload["hz"])
@@ -219,12 +385,20 @@ class SenseCollector:
                 channels,
             )
 
-            api_logger.info(
+            api_logger.debug(
                 "Data processed and sent to InfluxDB in 'handle_realtime_update' method"
             )
 
+        except KeyError as e:
+            api_logger.error(
+                f"KeyError in handle_realtime_update: {e}. Payload: {json.dumps(payload, indent=2)}"
+            )
         except Exception as e:
-            api_logger.error(f"Error in handle_realtime_update: {e}")
+            api_logger.error(
+                f"Error in handle_realtime_update: {e}. Payload: {json.dumps(payload, indent=2)}"
+            )
+        finally:
+            api_logger.debug("Finished handling realtime update")
 
     async def handle_new_timeline_event(self, payload):
         items_added = payload.get("items_added", [])
@@ -240,7 +414,7 @@ class SenseCollector:
                 api_logger.warning(f"Missing device_id in item: {item}")
 
     async def process_timeline_item(self, item):
-        api_logger.info("Starting to process timeline item")
+        api_logger.debug("Starting to process timeline item")
         api_logger.debug(f"Timeline item: {item}")
 
         try:
@@ -278,7 +452,7 @@ class SenseCollector:
                 device_transition_from_state,
             )
 
-            api_logger.info("Timeline item processed and sent to InfluxDB")
+            api_logger.debug("Timeline item processed and sent to InfluxDB")
 
         except KeyError as e:
             api_logger.error(f"KeyError in process_timeline_item: {e}")
@@ -327,7 +501,7 @@ class SenseCollector:
                 influxdb_timestamp,
             )
 
-            api_logger.info(
+            api_logger.debug(
                 f"Data change event data for device {device_id} sent to InfluxDB"
             )
 
@@ -351,16 +525,23 @@ class SenseCollector:
             )
 
     async def lookup_device_data(self, device_id):
+        api_logger.debug(f"Attempting to acquire semaphore for device_id: {device_id}")
         async with self.semaphore:
+            start_time = time.time()
+            api_logger.debug(f"Semaphore acquired for device_id: {device_id}")
             current_time = time.time()
+
             # Check if the device data is in cache and not expired
             if device_id in self.device_cache:
                 cached_data, timestamp = self.device_cache[device_id]
                 time_since_cached = current_time - timestamp
-                time_until_expiry = self.cache_expiry_seconds - time_since_cached
+                time_until_expiry = device_cache_expiry_seconds - time_since_cached
                 if time_until_expiry > 0:
                     api_logger.debug(
                         f"Cache hit for device_id: {device_id}, time until expiry: {time_until_expiry:.2f} seconds"
+                    )
+                    api_logger.debug(
+                        f"Finished lookup for device_id: {device_id} (cached) in {time.time() - start_time:.2f} seconds"
                     )
                     return cached_data
                 else:
@@ -371,7 +552,7 @@ class SenseCollector:
             url = SenseAPIEndpoints.DEVICE_DATA.format(
                 monitor_id=self.monitor_id, device_id=device_id
             )
-            api_logger.info(
+            api_logger.debug(
                 f"Sending request to fetch device data for device_id: {device_id}"
             )
             try:
@@ -385,8 +566,17 @@ class SenseCollector:
                         return await self.lookup_device_data(
                             device_id
                         )  # Retry after delay
+
                     response.raise_for_status()
                     device_data = await response.json()
+
+                    # Log the response payload to a file if enabled
+                    if output_received_data:
+                        file_name = f"device_{device_id}.json"
+                        file_path = os.path.join(export_folder, file_name)
+                        with open(file_path, "a") as file:
+                            file.write(json.dumps(device_data, indent=2) + "\n")
+                        api_logger.debug(f"Response payload appended to {file_path}")
 
                     # Cache the fetched data
                     self.device_cache[device_id] = (device_data, current_time)
@@ -398,10 +588,13 @@ class SenseCollector:
                 api_logger.error(f"Error fetching device data for {device_id}: {e}")
                 return None
             finally:
-                api_logger.info(
-                    f"Completed request for device_id: {device_id}, waiting for {self.lookup_delay_seconds} seconds before next request"
+                api_logger.debug(
+                    f"Completed request for device_id: {device_id}, waiting for {device_lookup_delay_seconds} seconds before next request"
                 )
-                await asyncio.sleep(self.lookup_delay_seconds)
+                await asyncio.sleep(device_lookup_delay_seconds)
+                api_logger.debug(
+                    f"Finished lookup for device_id: {device_id} in {time.time() - start_time:.2f} seconds"
+                )
 
     async def fetch_monitor_status(self):
         url = SenseAPIEndpoints.MONITOR_STATUS.format(monitor_id=self.monitor_id)
@@ -414,7 +607,9 @@ class SenseCollector:
                     await self.influxdb_storage.persist_monitor_status(
                         self.monitor_id, monitor_status
                     )
-                    api_logger.info("Successfully fetched and persisted monitor status")
+                    api_logger.debug(
+                        "Successfully fetched and persisted monitor status"
+                    )
             except aiohttp.ClientError as e:
                 api_logger.error(f"Failed to fetch monitor status: {e}")
 
@@ -432,7 +627,7 @@ class SenseCollector:
                     response.raise_for_status()
                     timeline_data = await response.json()
                     await self.process_timeline_data(timeline_data)
-                    api_logger.info(
+                    api_logger.debug(
                         f"Successfully fetched and processed timeline data at {human_start_time}"
                     )
                     logger.debug(
@@ -447,7 +642,7 @@ class SenseCollector:
             sleep_time = max(60 - elapsed_time, 0)
             human_sleep_time = datetime.now() + timedelta(seconds=sleep_time)
             human_sleep_time = human_sleep_time.strftime("%Y-%m-%d %H:%M:%S")
-            api_logger.info(
+            api_logger.debug(
                 f"Timeline polling completed at {human_start_time}. Next run at {human_sleep_time} after sleeping for {sleep_time:.2f} seconds"
             )
             await asyncio.sleep(sleep_time)
@@ -483,7 +678,7 @@ class SenseCollector:
                                 api_logger.warning(
                                     f"Device without ID found: {json.dumps(device, indent=4)}"
                                 )
-                        api_logger.info("Successfully fetched and queued devices")
+                        api_logger.debug("Successfully fetched and queued devices")
                     else:
                         api_logger.warning(
                             f"Unexpected response format: {devices_response}"
@@ -503,7 +698,7 @@ class SenseCollector:
             human_sleep_time = datetime.now() + timedelta(
                 seconds=max(3600 - elapsed_time, 0)
             )
-            api_logger.info(
+            api_logger.debug(
                 f"Fetch devices ran at: {human_elapsed_time}. "
                 f"Next fetch will run at: {human_sleep_time}. "
                 f"Sleeping for {max(3600 - elapsed_time, 0)} seconds."
@@ -540,6 +735,17 @@ async def main():
         "SENSE_COLLECTOR_LOG_LEVEL_API": "INFO",
         "SENSE_COLLECTOR_LOG_LEVEL_STORAGE": "INFO",
         "SENSE_COLLECTOR_LOG_LEVEL_GENERAL": "INFO",
+        "SENSE_COLLECTOR_WS_HEARTBEAT_INTERVAL": "10",
+        "SENSE_COLLECTOR_WS_HEARTBEAT_TIMEOUT": "30",
+        "SENSE_COLLECTOR_WS_RECONNECT_DELAY_INITIAL": "5",
+        "SENSE_COLLECTOR_WS_RECONNECT_DELAY_CAP": "60",
+        "SENSE_COLLECTOR_WS_MAX_RETRIES": "3",
+        "SENSE_COLLECTOR_WS_BACKOFF_FACTOR": "1",
+        "SENSE_COLLECTOR_WS_RECONNECT_INTERVAL": "840",
+        "SENSE_COLLECTOR_OUTPUT_RECEIVED_DATA": "false",
+        "SENSE_COLLECTOR_CACHE_EXPIRY_SECONDS": "120",
+        "SENSE_COLLECTOR_MAX_CONCURRENT_LOOKUPS": "4",
+        "SENSE_COLLECTOR_LOOKUP_DELAY_SECONDS": "0.5",
     }
 
     def obscure_value(value):
@@ -547,16 +753,24 @@ async def main():
             return value[:2] + "*" * (len(value) - 4) + value[-2:]
         return value
 
+    def bold(value):
+        return f"\033[1m{value}\033[0m"
+
     missing_env_vars = []
     logger.info("Environment Variable Settings:")
     for var, default in env_vars_defaults.items():
         value = os.environ.get(var, default)
-        is_default = value == default
+        # Ensure case-insensitive comparison for boolean values
+        is_default = (
+            value.lower() == str(default).lower()
+            if isinstance(default, str)
+            else value == default
+        )
         default_indicator = "(default)" if is_default else "(custom)"
         if "PASSWORD" in var or "TOKEN" in var:
             value_to_print = obscure_value(value)
         else:
-            value_to_print = value
+            value_to_print = bold(value) if not is_default else value
         logger.info(f"{var}: {value_to_print} {default_indicator}")
         if value is None:
             missing_env_vars.append(var)
