@@ -39,7 +39,7 @@ The username and password are the same as those used in the Sense mobile or Sens
 
 An example command line would be (be sure to change all of the variables):
 
-To start the docker container, simply update this example compose.yaml file:
+To start the docker container, simply update this minimal example compose.yaml file:
 
     name: sense-collector-53997
     services:
@@ -48,7 +48,6 @@ To start the docker container, simply update this example compose.yaml file:
         environment:
           SENSE_COLLECTOR_API_PASSWORD: CHANGEME
           SENSE_COLLECTOR_API_USERNAME: dave@lux4rd0.com
-          SENSE_COLLECTOR_HOST_HOSTNAME: sense-collector.lux4rd0.com
           SENSE_COLLECTOR_INFLUXDB_BUCKET: sense
           SENSE_COLLECTOR_INFLUXDB_ORG: Lux4rd0
           SENSE_COLLECTOR_INFLUXDB_TOKEN: TOKEN
@@ -63,7 +62,6 @@ If you don't want to use docker-compose, an example docker run command will be d
       --name=sense-collector-53997 \
       -e SENSE_COLLECTOR_API_PASSWORD=CHANGEME \
       -e SENSE_COLLECTOR_API_USERNAME=dave@lux4rd0.com \
-      -e SENSE_COLLECTOR_HOST_HOSTNAME=sense-collector.lux4rd0.com \
       -e SENSE_COLLECTOR_INFLUXDB_BUCKET=sense \
       -e SENSE_COLLECTOR_INFLUXDB_ORG=Tylephony \
       -e SENSE_COLLECTOR_INFLUXDB_TOKEN=TOKEN \
