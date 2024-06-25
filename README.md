@@ -72,7 +72,7 @@ If you don't want to use docker-compose, an example docker run command will be d
       --restart always \
       lux4rd0/sense-collector:latest
 
-Running `docker-compose up -d' or the `docker-run` command will download and start up the sense-collector container. 
+Running `docker compose up -d` or the `docker-run` command will download and start up the sense-collector container. 
 
 ## Environmental Flags:
 
@@ -163,7 +163,7 @@ This document provides a detailed explanation of the environmental variables use
 - **Options**: Integer value representing seconds
 
 ### SENSE_COLLECTOR_WS_RECONNECT_DELAY_INITIAL
-- **Description**: Initial delay (in seconds) before attempting to reconnect the WebSocket after a connection loss.
+- **Description**: Initial delay (in seconds) before reconnecting the WebSocket after a connection loss.
 - **Required**: No
 - **Default**: 5
 - **Options**: Integer value representing seconds
