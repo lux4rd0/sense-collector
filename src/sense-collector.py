@@ -51,6 +51,11 @@ device_lookup_delay_seconds = float(
     os.getenv("SENSE_COLLECTOR_DEVICE_LOOKUP_DELAY_SECONDS", 0.5)
 )
 
+# Token renewal interval in seconds (default is 12 hours)
+token_renew_interval = int(
+    os.getenv("SENSE_COLLECTOR_API_TOKEN_RENEW", 43200)
+)  # 43200 seconds = 12 hours
+
 
 # Configure logging based on environment variables
 
@@ -132,6 +137,41 @@ class SenseCollector:
 
         self.semaphore = asyncio.Semaphore(device_max_concurrent_lookups)
         self.session = None
+
+    async def renew_token(self):
+        url = SenseAPIEndpoints.AUTHENTICATE
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        data = {
+            "email": os.environ["SENSE_COLLECTOR_API_USERNAME"],
+            "password": os.environ["SENSE_COLLECTOR_API_PASSWORD"],
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, data=data) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    self.token = data["access_token"]
+                    self.headers["Authorization"] = f"bearer {self.token}"
+                    api_logger.info("Token renewed successfully.")
+                else:
+                    api_logger.error(f"Failed to renew token: {resp.status}")
+
+    async def periodic_token_renewal(self):
+        api_logger.info("Starting periodic token renewal task.")
+        next_renewal_time = datetime.now() + timedelta(seconds=token_renew_interval)
+        api_logger.info(
+            f"Initial token renewal scheduled in {token_renew_interval} seconds at {next_renewal_time.strftime('%Y-%m-%d %H:%M:%S')}."
+        )
+        while True:
+            api_logger.info(
+                f"Sleeping for {token_renew_interval} seconds before renewing token."
+            )
+            await asyncio.sleep(token_renew_interval)  # Sleep for the renewal interval
+            api_logger.info("Renewing token now.")
+            await self.renew_token()
+            next_renewal_time = datetime.now() + timedelta(seconds=token_renew_interval)
+            api_logger.info(
+                f"Token renewed. Next renewal in {token_renew_interval} seconds at {next_renewal_time.strftime('%Y-%m-%d %H:%M:%S')}."
+            )
 
     async def start_session(self):
         self.session = aiohttp.ClientSession()
@@ -722,6 +762,7 @@ def obfuscate_sensitive_data(data, visible_chars=4):
 
 
 async def main():
+    logger.info("Starting main function.")
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.info(f"Welcome to Sense Collector! Current time: {current_time}")
 
@@ -746,6 +787,7 @@ async def main():
         "SENSE_COLLECTOR_CACHE_EXPIRY_SECONDS": "120",
         "SENSE_COLLECTOR_MAX_CONCURRENT_LOOKUPS": "4",
         "SENSE_COLLECTOR_LOOKUP_DELAY_SECONDS": "0.5",
+        "SENSE_COLLECTOR_API_TOKEN_RENEW": "43200",
     }
 
     def obscure_value(value):
@@ -760,14 +802,11 @@ async def main():
     logger.info("Environment Variable Settings:")
     for var, default in env_vars_defaults.items():
         value = os.environ.get(var, default)
+        logger.debug(f"Retrieved environment variable {var} with value: {value}")
         # Ensure case-insensitive comparison for boolean values
-        is_default = (
-            value.lower() == str(default).lower()
-            if isinstance(default, str)
-            else value == default
-        )
+        is_default = str(value).lower() == str(default).lower()
         default_indicator = "(default)" if is_default else "(custom)"
-        if "PASSWORD" in var or "TOKEN" in var:
+        if "PASSWORD" in var or "INFLUXDB_TOKEN" in var:
             value_to_print = obscure_value(value)
         else:
             value_to_print = bold(value) if not is_default else value
@@ -782,13 +821,18 @@ async def main():
         sys.exit(1)
 
     try:
+        logger.info("Attempting to authenticate with Sense API.")
         auth_response = await authenticate_with_sense(
             os.environ["SENSE_COLLECTOR_API_USERNAME"],
             os.environ["SENSE_COLLECTOR_API_PASSWORD"],
         )
+        logger.debug(f"Authentication response: {auth_response}")
         monitor_id = str(auth_response["monitors"][0]["id"])
         token = auth_response["access_token"]
         user_id = auth_response["user_id"]
+        logger.info(
+            f"Successfully authenticated. Monitor ID: {monitor_id}, User ID: {user_id}"
+        )
     except Exception as e:
         logger.error(f"Authentication failed: {e}")
         sys.exit(1)
@@ -799,22 +843,28 @@ async def main():
         "org": os.environ.get("SENSE_COLLECTOR_INFLUXDB_ORG"),
         "bucket": os.environ.get("SENSE_COLLECTOR_INFLUXDB_BUCKET"),
     }
+    logger.debug(f"InfluxDB parameters: {influxdb_params}")
 
     influxdb_storage = InfluxDBStorage(influxdb_params)
 
     collector = SenseCollector(monitor_id, token, influxdb_storage, user_id)
+    logger.info("Starting session for SenseCollector.")
     await collector.start_session()
 
     try:
+        logger.info("Starting all Sense Collector tasks.")
         await asyncio.gather(
             collector.api_worker(),
             collector.receive_data(),
             collector.fetch_monitor_status(),
             collector.fetch_devices(),
+            collector.periodic_token_renewal(),
         )
     finally:
+        logger.info("Closing session for SenseCollector.")
         await collector.close_session()
 
 
 if __name__ == "__main__":
+    logger.info("Starting Sense Collector script.")
     asyncio.run(main())
