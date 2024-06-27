@@ -94,6 +94,12 @@ This document provides a detailed explanation of the environmental variables use
 - **Default**: None
 - **Options**: User-provided email address
 
+### SENSE_COLLECTOR_API_TOKEN_RENEW
+- **Description**: Interval (in seconds) renews the Sense API token to maintain an active session.
+- **Required**: No
+- **Default**: 43200 (12 hours)
+- **Options**: Integer value representing seconds
+
 ### SENSE_COLLECTOR_HOST_HOSTNAME
 - **Description**: The hostname that is running the Docker container. Used in the Collector Info dashboard to know where the Collector is running.
 - **Required**: No
