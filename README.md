@@ -23,7 +23,7 @@ The project is deployed as a Docker container.
 
 Use the following [Docker container](https://hub.docker.com/r/lux4rd0/sense-collector):
 
-    lux4rd0/sense-collector:2.0.06
+    lux4rd0/sense-collector:2.0.07
     lux4rd0/sense-collector:latest
     
 Correct environmental variables are required for the container to function. 
