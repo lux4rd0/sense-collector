@@ -308,9 +308,28 @@ The **Monitor & Detection** dashboard provides observability of the monitor itse
 
 **Monitor Details**: This panel shows current information about Online status, General Status, Learning Progress, IP Address, MAC Address, Wi-Fi SSID, Wi-Fi strength, Ethernet, NDT Enabled, and software version. 
 
+## Grafana Datasource
+
+This collector uses InfluxQL, and for the dashboards to function, you need to create a data source in Grafana using the credentials you set in InfluxDB V2. More details can be found on the InfluxDB V2 Web site:
+
+https://docs.influxdata.com/influxdb/v2/tools/grafana/?t=InfluxQL#configure-your-influxdb-connection
+
+The biggest change here is:
+
+ - Configure InfluxDB authentication:
+   
+   **Token authentication**
+   Under **Custom HTTP Headers**, select **Add Header**. Provide your InfluxDB API token:
+   
+   **Header**: Enter `Authorization`
+   
+   **Value**: Use the `Token` schema and provide your InfluxDB API token. For example:
+   
+       Token y0uR5uP3rSecr3tT0k3n
+
 ## Multiple Devices
 
-The Sense Collector and dashboards currently only support a single Sense instance. If you have more than one Sense device and are interested in having multiple devices supported, please let me know.
+The Sense Collector and dashboards currently only support a single Sense instance. Please let me know if you have more than one Sense device and are interested in having multiple devices supported.
 
 ### Time Zone Variable
 
