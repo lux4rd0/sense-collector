@@ -44,9 +44,6 @@ Project Link: [https://github.com/lux4rd0/sense-collector](https://github.com/lu
 
 ## Acknowledgements
 
-We'd like to thank the following for their contributions:
 - [Grafana Labs](https://grafana.com/)
 - [InfluxData](https://www.influxdata.com/)
 - [Sense Labs](https://sense.com/)
-
-For a complete list of credits, see the [Acknowledgements page](https://github.com/lux4rd0/sense-collector/wiki/Acknowledgements) on the Wiki.
